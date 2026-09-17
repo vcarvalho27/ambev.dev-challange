@@ -9,7 +9,7 @@ using Ambev.DeveloperEvaluation.Application.Users.CreateUser;
 using Ambev.DeveloperEvaluation.Application.Users.GetUser;
 using Ambev.DeveloperEvaluation.Application.Users.DeleteUser;
 
-namespace Ambev.DeveloperEvaluation.WebApi.Features.Users;
+namespace Ambev.DeveloperEvaluation.WebApi.Controllers;
 
 /// <summary>
 /// Controller for managing user operations

@@ -1,86 +1,119 @@
-# Developer Evaluation Project
+# Ambev Developer Evaluation
 
-`READ CAREFULLY`
+Backend API for managing sales, built with .NET 8, PostgreSQL, MongoDB and Redis.
 
-## Instructions
-**The test below will have up to 7 calendar days to be delivered from the date of receipt of this manual.**
+## Requirements
 
-- The code must be versioned in a public Github repository and a link must be sent for evaluation once completed
-- Upload this template to your repository and start working from it
-- Read the instructions carefully and make sure all requirements are being addressed
-- The repository must provide instructions on how to configure, execute and test the project
-- Documentation and overall organization will also be taken into consideration
+- Docker Desktop with Docker Compose
+- .NET SDK 8.0 (only required to run the solution or tests outside Docker)
 
-## Use Case
-**You are a developer on the DeveloperStore team. Now we need to implement the API prototypes.**
+## Run with Docker
 
-As we work with `DDD`, to reference entities from other domains, we use the `External Identities` pattern with denormalization of entity descriptions.
+The Docker Compose files are located in `template/backend`.
 
-Therefore, you will write an API (complete CRUD) that handles sales records. The API needs to be able to inform:
+```bash
+cd template/backend
+docker compose up --build
+```
 
-* Sale number
-* Date when the sale was made
-* Customer
-* Total sale amount
-* Branch where the sale was made
-* Products
-* Quantities
-* Unit prices
-* Discounts
-* Total amount for each item
-* Cancelled/Not Cancelled
+The first startup builds the Web API image and starts the following services:
 
-It's not mandatory, but it would be a differential to build code for publishing events of:
-* SaleCreated
-* SaleModified
-* SaleCancelled
-* ItemCancelled
+- Web API
+- PostgreSQL
+- MongoDB
+- Redis
 
-If you write the code, **it's not required** to actually publish to any Message Broker. You can log a message in the application log or however you find most convenient.
+The API container listens on ports `8080` (HTTP) and `8081` (HTTPS). The Compose file publishes container ports dynamically, so retrieve the host port with:
 
-### Business Rules
+```bash
+docker compose port ambev.developerevaluation.webapi 8080
+```
 
-* Purchases above 4 identical items have a 10% discount
-* Purchases between 10 and 20 identical items have a 20% discount
-* It's not possible to sell above 20 identical items
-* Purchases below 4 items cannot have a discount
+Open the displayed address followed by `/swagger`, for example `http://localhost:<host-port>/swagger`.
+Swagger is enabled because the Compose environment is `Development`.
 
-These business rules define quantity-based discounting tiers and limitations:
+To stop the services, press `Ctrl+C` or run:
 
-1. Discount Tiers:
-   - 4+ items: 10% discount
-   - 10-20 items: 20% discount
+```bash
+docker compose down
+```
 
-2. Restrictions:
-   - Maximum limit: 20 items per product
-   - No discounts allowed for quantities below 4 items
+To stop the services and remove their containers and volumes created by Compose:
 
-## Overview
-This section provides a high-level overview of the project and the various skills and competencies it aims to assess for developer candidates. 
+```bash
+docker compose down --volumes
+```
 
-See [Overview](/.doc/overview.md)
+If the API starts before PostgreSQL is ready and the logs show a database connection error, restart only the API after the database container is running:
 
-## Tech Stack
-This section lists the key technologies used in the project, including the backend, testing, frontend, and database components. 
+```bash
+docker compose restart ambev.developerevaluation.webapi
+```
 
-See [Tech Stack](/.doc/tech-stack.md)
+View service status and logs with:
 
-## Frameworks
-This section outlines the frameworks and libraries that are leveraged in the project to enhance development productivity and maintainability. 
+```bash
+docker compose ps
+docker compose logs -f ambev.developerevaluation.webapi
+```
 
-See [Frameworks](/.doc/frameworks.md)
+## Tests
 
-<!-- 
-## API Structure
-This section includes links to the detailed documentation for the different API resources:
-- [API General](./docs/general-api.md)
-- [Products API](/.doc/products-api.md)
-- [Carts API](/.doc/carts-api.md)
-- [Users API](/.doc/users-api.md)
-- [Auth API](/.doc/auth-api.md)
--->
+Restore dependencies and run all test projects from `template/backend`:
 
-## Project Structure
-This section describes the overall structure and organization of the project files and directories. 
+```bash
+dotnet restore Ambev.DeveloperEvaluation.sln
+dotnet test Ambev.DeveloperEvaluation.sln
+```
 
-See [Project Structure](/.doc/project-structure.md)
+The solution contains unit, integration and functional test projects under `template/backend/tests`.
+
+To run a specific test project:
+
+```bash
+dotnet test tests/Ambev.DeveloperEvaluation.Unit
+dotnet test tests/Ambev.DeveloperEvaluation.Integration
+dotnet test tests/Ambev.DeveloperEvaluation.Functional
+```
+
+To collect coverage using the Coverlet collector included in the test projects:
+
+```bash
+dotnet test Ambev.DeveloperEvaluation.sln --collect:"XPlat Code Coverage"
+```
+
+The repository also includes `coverage-report.bat` and `coverage-report.sh`, which generate an HTML report when the required .NET global tools are available.
+
+## Project structure
+
+```text
+template/backend/
+	src/
+		Ambev.DeveloperEvaluation.WebApi/       HTTP API and Swagger
+		Ambev.DeveloperEvaluation.Application/  Use cases and handlers
+		Ambev.DeveloperEvaluation.Domain/       Domain entities and rules
+		Ambev.DeveloperEvaluation.ORM/          EF Core, PostgreSQL and repositories
+		Ambev.DeveloperEvaluation.IoC/          Dependency injection configuration
+		Ambev.DeveloperEvaluation.Common/       Cross-cutting concerns
+	tests/
+		Ambev.DeveloperEvaluation.Unit/
+		Ambev.DeveloperEvaluation.Integration/
+		Ambev.DeveloperEvaluation.Functional/
+```
+
+## Business rules
+
+- Four or more identical items receive a 10% discount.
+- Ten to twenty identical items receive a 20% discount.
+- More than twenty identical items cannot be sold.
+- Quantities below four items do not receive a discount.
+
+## Notes
+
+Since its a sample project, I didn`t do a lot of implementations that I would do on a real case scenario, so I am going to list some of them:
+
+- Sales should have Authentication and Authorization (if user is a customer, it can only handle his data)
+- Idempotency: Avoid duplicated requests
+- It has not clear, but probably it need to have a CRUD for Cart (temporary holder) and another for effective Sale
+- Check ProductId and BranchId on respective APIs to validate products prices and availability
+- Caching with Redis

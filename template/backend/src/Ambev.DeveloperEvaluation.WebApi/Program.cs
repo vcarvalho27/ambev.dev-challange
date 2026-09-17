@@ -9,6 +9,7 @@ using Ambev.DeveloperEvaluation.WebApi.Middleware;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Ambev.DeveloperEvaluation.WebApi.Extentions;
 
 namespace Ambev.DeveloperEvaluation.WebApi;
 
@@ -70,6 +71,8 @@ public class Program
 
             app.MapControllers();
 
+            app.Services.ApplyMigration();
+
             app.Run();
         }
         catch (Exception ex)
@@ -81,4 +84,6 @@ public class Program
             Log.CloseAndFlush();
         }
     }
+
+
 }

@@ -11,8 +11,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.ToTable("Users");
 
-        builder.HasKey(u => u.Id);
-        builder.Property(u => u.Id).HasColumnType("uuid").HasDefaultValueSql("gen_random_uuid()");
+        //builder.HasKey(u => u.Id);
+        //builder.Property(u => u.Id).HasColumnType("uuid").HasDefaultValueSql("gen_random_uuid()");
 
         builder.Property(u => u.Username).IsRequired().HasMaxLength(50);
         builder.Property(u => u.Password).IsRequired().HasMaxLength(100);
